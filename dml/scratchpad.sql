@@ -3,8 +3,17 @@
 update power_plant 
 set latitude = (random() * 181 + -90)
 where latitude>90 or latitude<-90;
+
+update imagery 
+set latitude = (random() * 181 + -90)
+where latitude>90 or latitude<-90;
+
 --fix long out of bounds
 update power_plant 
+set longitude = (random() * 361 + -180)
+where longitude>180 or longitude<-180;
+
+update imagery 
 set longitude = (random() * 361 + -180)
 where longitude>180 or longitude<-180;
 --check
@@ -33,3 +42,16 @@ select i.created_on, i.image_path, i.cloud_fraction, gu.plant_id, gu.id as gener
 join v_generation_units_usa gu on i.plant_id=gu.plant_id 
 join generation g on gu.generation_reporting_id=g.generation_reporting_id
 where gu.fuel_type='coal' and gu.capacity>100;
+
+--query to count all rows of all tables and views (source: https://stackoverflow.com/questions/2596670/how-do-you-find-the-row-count-for-all-your-tables-in-postgres)
+WITH tbl AS
+  (SELECT table_schema,
+          TABLE_NAME
+   FROM information_schema.tables
+   WHERE TABLE_NAME not like 'pg_%'
+     AND table_schema in ('public'))
+SELECT table_schema,
+       TABLE_NAME,
+       (xpath('/row/c/text()', query_to_xml(format('select count(*) as c from %I.%I', table_schema, TABLE_NAME), FALSE, TRUE, '')))[1]::text::int AS rows_n
+FROM tbl
+ORDER BY rows_n DESC;
